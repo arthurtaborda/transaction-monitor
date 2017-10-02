@@ -1,0 +1,26 @@
+group 'com.arthurtaborda'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile(
+            'com.fasterxml.jackson.core:jackson-databind:2.6.5',
+            'com.fasterxml.jackson.core:jackson-core:2.6.5',
+            'io.vertx:vertx-web:3.4.2',
+            'org.apache.logging.log4j:log4j-core:2.9.1',
+            'org.apache.logging.log4j:log4j-slf4j-impl:2.9.1'
+    )
+    testCompile(
+            'junit:junit:4.12',
+            'org.assertj:assertj-core:3.8.0',
+            'io.rest-assured:rest-assured:3.0.2',
+            'io.vertx:vertx-unit:3.4.2'
+    )
+}

@@ -1,7 +1,6 @@
 package com.arthurtaborda.transactionmonitor;
 
 import com.arthurtaborda.transactionmonitor.repository.FakeTransactionRepository;
-import com.arthurtaborda.transactionmonitor.repository.Transaction;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.vertx.core.DeploymentOptions;
@@ -57,8 +56,52 @@ public class TransactionsApiTest {
     }
 
     @Test
+    public void whenTransactionRequestHasMissingAmount_return400() {
+        given().body(new TransactionRequest(null, currentTimeMillis()).toJson())
+               .contentType(ContentType.JSON)
+               .when()
+               .post("/transactions")
+               .then()
+               .statusCode(400)
+               .body(equalTo("Amount is required"));
+    }
+
+    @Test
+    public void whenTransactionRequestHasInvalidAmount_return400() {
+        given().body(new TransactionRequest("invalid value", currentTimeMillis()).toJson())
+               .contentType(ContentType.JSON)
+               .when()
+               .post("/transactions")
+               .then()
+               .statusCode(400)
+               .body(equalTo("Amount is invalid"));
+    }
+
+    @Test
+    public void whenTransactionRequestHasMissingTimestamp_return400() {
+        given().body(new TransactionRequest(300, null).toJson())
+               .contentType(ContentType.JSON)
+               .when()
+               .post("/transactions")
+               .then()
+               .statusCode(400)
+               .body(equalTo("Timestamp is required"));
+    }
+
+    @Test
+    public void whenTransactionRequestHasInvalidTimestamp_return400() {
+        given().body(new TransactionRequest(300, "invalid value").toJson())
+               .contentType(ContentType.JSON)
+               .when()
+               .post("/transactions")
+               .then()
+               .statusCode(400)
+               .body(equalTo("Timestamp is invalid"));
+    }
+
+    @Test
     public void whenTransactionIsSuccessful_return201() {
-        given().body(new Transaction(300, currentTimeMillis()))
+        given().body(new TransactionRequest(300, currentTimeMillis()).toJson())
                .contentType(ContentType.JSON)
                .when()
                .post("/transactions")
@@ -68,7 +111,7 @@ public class TransactionsApiTest {
 
     @Test
     public void whenTransactionIsOlderThan60Sec_return204() {
-        given().body(new Transaction(300, currentTimeMillis() - 61000))
+        given().body(new TransactionRequest(300, currentTimeMillis() - 61000).toJson())
                .contentType(ContentType.JSON)
                .when()
                .post("/transactions")
@@ -92,7 +135,7 @@ public class TransactionsApiTest {
 
     @Test
     public void whenTransactionIsSuccessful_updateStatistics() {
-        given().body(new Transaction(300, currentTimeMillis()))
+        given().body(new TransactionRequest(300, currentTimeMillis()).toJson())
                .contentType(ContentType.JSON)
                .when()
                .post("/transactions");

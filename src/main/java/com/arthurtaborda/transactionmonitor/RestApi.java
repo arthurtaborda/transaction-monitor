@@ -14,10 +14,6 @@ import io.vertx.ext.web.handler.BodyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
-
-import static java.math.RoundingMode.FLOOR;
-
 public class RestApi extends AbstractVerticle {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestApi.class.getName());
@@ -60,13 +56,34 @@ public class RestApi extends AbstractVerticle {
         router.post("/transactions")
               .consumes("application/json")
               .handler(ctx -> {
+                  HttpServerResponse response = ctx.response();
                   JsonObject request = ctx.getBodyAsJson();
-                  Transaction transaction = new Transaction(request.getDouble("amount"),
-                                                            request.getLong("timestamp"));
+                  Double amount = null;
+                  try {
+                      amount = request.getDouble("amount");
+                      if (amount == null) {
+                          response.setStatusCode(400).end("Amount is required");
+                          return;
+                      }
+                  } catch (Exception e) {
+                      response.setStatusCode(400).end("Amount is invalid");
+                      return;
+                  }
+                  Long timestamp = null;
+                  try {
+                      timestamp = request.getLong("timestamp");
+                      if (timestamp == null) {
+                          response.setStatusCode(400).end("Timestamp is required");
+                          return;
+                      }
+                  } catch (Exception e) {
+                      response.setStatusCode(400).end("Timestamp is invalid");
+                      return;
+                  }
+                  Transaction transaction = new Transaction(amount, timestamp);
 
                   boolean added = transactionRepository.addTransaction(transaction);
 
-                  HttpServerResponse response = ctx.response();
                   if (added) {
                       response.setStatusCode(201);
                   } else {

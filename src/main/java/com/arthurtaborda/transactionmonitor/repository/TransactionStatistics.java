@@ -7,34 +7,26 @@ import static java.math.RoundingMode.FLOOR;
 
 public class TransactionStatistics {
 
-    private long count;
-    private double avg;
-    private double sum;
-    private double min;
-    private double max;
+    private final long count;
+    private final double avg;
+    private final double sum;
+    private final double min;
+    private final double max;
+
+    public TransactionStatistics() {
+        this.count = 0;
+        this.avg = 0;
+        this.sum = 0;
+        this.min = 0;
+        this.max = 0;
+    }
 
     public TransactionStatistics(DoubleSummaryStatistics st) {
-        this(st.getCount(),
-             round(st.getAverage()),
-             round(st.getSum()),
-             st.getMin() == Double.POSITIVE_INFINITY ? 0 : round(st.getMin()),
-             st.getMax() == Double.NEGATIVE_INFINITY ? 0 : round(st.getMax()));
-    }
-
-    TransactionStatistics(long count, double avg, double sum, double min, double max) {
-        this.count = count;
-        this.avg = avg;
-        this.sum = sum;
-        this.min = min;
-        this.max = max;
-    }
-
-    void setStats(DoubleSummaryStatistics st) {
-        count = st.getCount();
-        avg = round(st.getAverage());
-        sum = round(st.getSum());
-        min = st.getMin() == Double.POSITIVE_INFINITY ? 0 : round(st.getMin());
-        max = st.getMax() == Double.NEGATIVE_INFINITY ? 0 : round(st.getMax());
+        this.count = st.getCount();
+        this.avg = round(st.getAverage());
+        this.sum = round(st.getSum());
+        this.min = st.getMin() == Double.POSITIVE_INFINITY ? 0 : round(st.getMin());
+        this.max = st.getMax() == Double.NEGATIVE_INFINITY ? 0 : round(st.getMax());
     }
 
     public long getCount() {

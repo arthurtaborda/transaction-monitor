@@ -20,8 +20,8 @@ public class InMemTransactionRepository implements TransactionRepository {
     private final StampedLock transactionsLock;
 
     private final Vertx vertx;
-    private final TransactionStatistics statistics;
 
+    private TransactionStatistics statistics;
     private long timer;
     private Collection<Transaction> transactions;
 
@@ -31,7 +31,7 @@ public class InMemTransactionRepository implements TransactionRepository {
 
         this.vertx = vertx;
         this.transactions = new LinkedList<>();
-        this.statistics = new TransactionStatistics(0, 0, 0, 0, 0);
+        this.statistics = new TransactionStatistics();
 
         setTimer();
     }
@@ -81,21 +81,15 @@ public class InMemTransactionRepository implements TransactionRepository {
     private void generateStatistics() {
         LOGGER.debug("Generate statistics");
 
-        DoubleSummaryStatistics st;
+        long writeLock = statisticsLock.writeLock();
         long readLock = transactionsLock.readLock();
         try {
-            st = transactions.stream()
-                             .mapToDouble(Transaction::getAmount)
-                             .summaryStatistics();
-        } finally {
-            transactionsLock.unlockRead(readLock);
-        }
-
-        long writeLock = statisticsLock.writeLock();
-        try {
-            statistics.setStats(st);
+            statistics = new TransactionStatistics(transactions.stream()
+                                                               .mapToDouble(Transaction::getAmount)
+                                                               .summaryStatistics());
         } finally {
             statisticsLock.unlockWrite(writeLock);
+            transactionsLock.unlockRead(readLock);
         }
     }
 

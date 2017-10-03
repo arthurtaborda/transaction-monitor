@@ -1,5 +1,8 @@
 # transaction-monitor
 
+Requirements:
+Adding a transaction and getting statistics must be executed in constant time and memory (O(1))
+
 To start it up:
 ```
 gradle run

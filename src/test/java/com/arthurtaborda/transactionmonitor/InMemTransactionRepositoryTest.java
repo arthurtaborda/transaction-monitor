@@ -97,6 +97,21 @@ public class InMemTransactionRepositoryTest {
     }
 
     @Test
+    public void whenTransactionExpires_removeFromStatistics() throws Exception {
+        addTransaction(300, currentTimeMillis() - 59400);
+
+        waitToGenerateStatistics();
+
+        assertThat(repository.getStatistics().getCount()).isEqualTo(1);
+        assertThat(repository.getStatistics().getSum()).isEqualTo(300);
+
+        waitToGenerateStatistics();
+
+        assertThat(repository.getStatistics().getCount()).isEqualTo(0);
+        assertThat(repository.getStatistics().getSum()).isEqualTo(0);
+    }
+
+    @Test
     public void whenAddTransactionWithLessThan60Sec_add() throws Exception {
         addTransaction(300);
 

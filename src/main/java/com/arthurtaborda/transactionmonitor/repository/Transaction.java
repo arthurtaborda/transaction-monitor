@@ -1,8 +1,5 @@
 package com.arthurtaborda.transactionmonitor.repository;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import static java.lang.System.currentTimeMillis;
 
 public class Transaction {
@@ -24,6 +21,7 @@ public class Transaction {
     }
 
     public boolean happenedInLastMinute() {
-        return currentTimeMillis() - timestamp < 60000;
+        long currentTimeMillis = currentTimeMillis();
+        return currentTimeMillis >= timestamp && currentTimeMillis - timestamp < 60000;
     }
 }

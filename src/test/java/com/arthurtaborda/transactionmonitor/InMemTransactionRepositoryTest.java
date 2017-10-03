@@ -121,6 +121,15 @@ public class InMemTransactionRepositoryTest {
     }
 
     @Test
+    public void whenAddTransactionFromFuture_doNotAdd() throws Exception {
+        addTransaction(300, currentTimeMillis() + 2000);
+
+        waitToGenerateStatistics();
+
+        assertThat(repository.getStatistics().getCount()).isEqualTo(0);
+    }
+
+    @Test
     public void testAverage() throws Exception {
         addTransaction(300);
         addTransaction(500);

@@ -10,6 +10,7 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,36 +58,10 @@ public class RestApi extends AbstractVerticle {
               .consumes("application/json")
               .handler(ctx -> {
                   HttpServerResponse response = ctx.response();
-                  JsonObject request = null;
-                  try {
-                      request = ctx.getBodyAsJson();
-                  } catch (Exception e) {
-                      response.setStatusCode(400).end("Json is invalid");
+                  Transaction transaction = getTransactionFromRequest(ctx, response);
+                  if (transaction == null) {
                       return;
                   }
-                  Double amount = null;
-                  try {
-                      amount = request.getDouble("amount");
-                      if (amount == null) {
-                          response.setStatusCode(400).end("Amount is required");
-                          return;
-                      }
-                  } catch (Exception e) {
-                      response.setStatusCode(400).end("Amount is invalid");
-                      return;
-                  }
-                  Long timestamp = null;
-                  try {
-                      timestamp = request.getLong("timestamp");
-                      if (timestamp == null) {
-                          response.setStatusCode(400).end("Timestamp is required");
-                          return;
-                      }
-                  } catch (Exception e) {
-                      response.setStatusCode(400).end("Timestamp is invalid");
-                      return;
-                  }
-                  Transaction transaction = new Transaction(amount, timestamp);
 
                   boolean added = transactionRepository.addTransaction(transaction);
 
@@ -98,6 +73,39 @@ public class RestApi extends AbstractVerticle {
 
                   response.end();
               });
+    }
+
+    private static Transaction getTransactionFromRequest(RoutingContext ctx, HttpServerResponse response) {
+        JsonObject request = null;
+        try {
+            request = ctx.getBodyAsJson();
+        } catch (Exception e) {
+            response.setStatusCode(400).end("Json is invalid");
+            return null;
+        }
+        Double amount = null;
+        try {
+            amount = request.getDouble("amount");
+            if (amount == null) {
+                response.setStatusCode(400).end("Amount is required");
+                return null;
+            }
+        } catch (Exception e) {
+            response.setStatusCode(400).end("Amount is invalid");
+            return null;
+        }
+        Long timestamp = null;
+        try {
+            timestamp = request.getLong("timestamp");
+            if (timestamp == null) {
+                response.setStatusCode(400).end("Timestamp is required");
+                return null;
+            }
+        } catch (Exception e) {
+            response.setStatusCode(400).end("Timestamp is invalid");
+            return null;
+        }
+        return new Transaction(amount, timestamp);
     }
 
     private void statisticsEndpoint(Router router) {

@@ -1,7 +1,6 @@
-package com.arthurtaborda.transactionmonitor;
+package com.arthurtaborda.transactionmonitor.repository;
 
 import java.util.DoubleSummaryStatistics;
-import java.util.LongSummaryStatistics;
 
 public interface TransactionRepository {
 
@@ -14,5 +13,5 @@ public interface TransactionRepository {
     /**
      * @return Statistics about the transactions from the last 60 seconds
      */
-    DoubleSummaryStatistics getStatistics();
+    TransactionStatistics getStatistics();
 }

@@ -1,4 +1,4 @@
-package com.arthurtaborda.transactionmonitor;
+package com.arthurtaborda.transactionmonitor.repository;
 
 import java.util.Collection;
 import java.util.DoubleSummaryStatistics;
@@ -6,7 +6,7 @@ import java.util.LinkedList;
 
 public class FakeTransactionRepository implements TransactionRepository {
 
-    private final Collection<Transaction> transactions;
+    private Collection<Transaction> transactions;
 
     public FakeTransactionRepository() {
         transactions = new LinkedList<>();
@@ -22,14 +22,15 @@ public class FakeTransactionRepository implements TransactionRepository {
     }
 
     @Override
-    public DoubleSummaryStatistics getStatistics() {
-        return transactions.stream()
-                           .filter(Transaction::happenedInLastSecond)
-                           .mapToDouble(Transaction::getAmount)
-                           .summaryStatistics();
+    public TransactionStatistics getStatistics() {
+        DoubleSummaryStatistics st = transactions.stream()
+                                                 .filter(Transaction::happenedInLastSecond)
+                                                 .mapToDouble(Transaction::getAmount)
+                                                 .summaryStatistics();
+        return new TransactionStatistics(st);
     }
 
     public void clear() {
-        transactions.clear();
+        transactions = new LinkedList<>();
     }
 }

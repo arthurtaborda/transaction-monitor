@@ -1,5 +1,8 @@
 package com.arthurtaborda.transactionmonitor;
 
+import com.arthurtaborda.transactionmonitor.repository.Transaction;
+import com.arthurtaborda.transactionmonitor.repository.TransactionRepository;
+import com.arthurtaborda.transactionmonitor.repository.TransactionStatistics;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServer;
@@ -12,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.util.DoubleSummaryStatistics;
 
 import static java.math.RoundingMode.FLOOR;
 
@@ -20,18 +22,20 @@ public class RestApi extends AbstractVerticle {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestApi.class.getName());
 
-    private static final int PORT = 9090;
-
+    private HttpServer server;
+    private int port;
     private final TransactionRepository transactionRepository;
 
-    public RestApi(TransactionRepository transactionRepository) {
+    public RestApi(int port, TransactionRepository transactionRepository) {
+        this.port = port;
         this.transactionRepository = transactionRepository;
     }
 
     @Override
     public void start() throws Exception {
-        HttpServerOptions serverOptions = new HttpServerOptions().setPort(PORT);
+        HttpServerOptions serverOptions = new HttpServerOptions().setPort(port);
 
+        server = vertx.createHttpServer(serverOptions);
         Router router = Router.router(vertx);
         router.route()
               .handler(BodyHandler.create());
@@ -39,14 +43,17 @@ public class RestApi extends AbstractVerticle {
         transactionEndpoint(router);
         statisticsEndpoint(router);
 
-        HttpServer server = vertx.createHttpServer(serverOptions);
         server.requestHandler(router::accept)
               .listen(result -> {
                   if (result.succeeded()) {
-                      LOGGER.info("Http server listening on port " + PORT);
+                      LOGGER.info("Http server listening on port " + port);
                   }
               });
+    }
 
+    @Override
+    public void stop() throws Exception {
+        server.close();
     }
 
     private void transactionEndpoint(Router router) {
@@ -74,13 +81,13 @@ public class RestApi extends AbstractVerticle {
         router.get("/statistics")
               .produces("application/json")
               .handler(ctx -> {
-                  DoubleSummaryStatistics statistics = transactionRepository.getStatistics();
+                  TransactionStatistics statistics = transactionRepository.getStatistics();
 
                   JsonObject json = new JsonObject();
-                  json.put("sum", precisely(statistics.getSum()));
-                  json.put("avg", precisely(statistics.getAverage()));
-                  json.put("max", precisely(statistics.getMax()));
-                  json.put("min", precisely(statistics.getMin()));
+                  json.put("sum", statistics.getSum());
+                  json.put("avg", statistics.getAverage());
+                  json.put("max", statistics.getMax());
+                  json.put("min", statistics.getMin());
                   json.put("count", statistics.getCount());
 
                   ctx.response()
@@ -88,17 +95,5 @@ public class RestApi extends AbstractVerticle {
                      .putHeader(HttpHeaders.CONTENT_TYPE, "application/json; charset=utf-8")
                      .end(json.toString());
               });
-    }
-
-    private Double precisely(double val) {
-        if (val == Double.POSITIVE_INFINITY || val == Double.NEGATIVE_INFINITY) {
-            return Double.valueOf(0);
-        }
-        return new BigDecimal(val).setScale(2, FLOOR).doubleValue();
-    }
-
-    @Override
-    public void stop() throws Exception {
-        super.stop();
     }
 }

@@ -1,5 +1,7 @@
 package com.arthurtaborda.transactionmonitor;
 
+import com.arthurtaborda.transactionmonitor.repository.FakeTransactionRepository;
+import com.arthurtaborda.transactionmonitor.repository.Transaction;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.vertx.core.DeploymentOptions;
@@ -8,6 +10,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,13 +29,14 @@ public class TransactionsApiTest {
 
     private static final int PORT = 9090;
     private static FakeTransactionRepository transactionRepository;
+    private static Vertx vertx;
 
     @BeforeClass
     public static void setUp(TestContext context) throws IOException, InterruptedException {
-        Vertx vertx = Vertx.vertx();
+        vertx = Vertx.vertx();
 
         transactionRepository = new FakeTransactionRepository();
-        RestApi verticle = new RestApi(transactionRepository);
+        RestApi verticle = new RestApi(PORT, transactionRepository);
 
         // deploy the verticle
         DeploymentOptions options = new DeploymentOptions().setConfig(new JsonObject().put("port", PORT));
@@ -45,6 +49,11 @@ public class TransactionsApiTest {
     @After
     public void tearDown() throws Exception {
         transactionRepository.clear();
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+        vertx.close();
     }
 
     @Test

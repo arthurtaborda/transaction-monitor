@@ -1,4 +1,4 @@
-package com.arthurtaborda.transactionmonitor;
+package com.arthurtaborda.transactionmonitor.repository;
 
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
@@ -16,18 +16,22 @@ public class InMemTransactionRepository implements TransactionRepository {
 
     private static final int TIMER_INTERVAL_MS = 400;
 
+    private final StampedLock statisticsLock;
+    private final StampedLock transactionsLock;
+
     private final Vertx vertx;
-    private final StampedLock lock;
+    private final TransactionStatistics statistics;
 
     private long timer;
     private Collection<Transaction> transactions;
-    private DoubleSummaryStatistics statistics;
 
     public InMemTransactionRepository(Vertx vertx) {
-        this.lock = new StampedLock();
+        this.statisticsLock = new StampedLock();
+        this.transactionsLock = new StampedLock();
+
         this.vertx = vertx;
         this.transactions = new LinkedList<>();
-        this.statistics = new DoubleSummaryStatistics();
+        this.statistics = new TransactionStatistics(0, 0, 0, 0, 0);
 
         setTimer();
     }
@@ -52,11 +56,11 @@ public class InMemTransactionRepository implements TransactionRepository {
         boolean happenedInLastSecond = transaction.happenedInLastSecond();
         if (happenedInLastSecond) {
             LOGGER.debug("Add transaction");
-            long writeLock = lock.writeLock();
+            long writeLock = transactionsLock.writeLock();
             try {
                 transactions.add(transaction);
             } finally {
-                lock.unlockWrite(writeLock);
+                transactionsLock.unlockWrite(writeLock);
             }
         }
 
@@ -64,29 +68,43 @@ public class InMemTransactionRepository implements TransactionRepository {
     }
 
     @Override
-    public DoubleSummaryStatistics getStatistics() {
+    public TransactionStatistics getStatistics() {
         LOGGER.debug("Get statistics");
-        return statistics;
+        long readLock = statisticsLock.readLock();
+        try {
+            return statistics;
+        } finally {
+            statisticsLock.unlockRead(readLock);
+        }
     }
 
     private void generateStatistics() {
         LOGGER.debug("Generate statistics");
-        long readLock = lock.readLock();
+
+        DoubleSummaryStatistics st;
+        long readLock = transactionsLock.readLock();
         try {
-            statistics = transactions.stream()
-                                     .mapToDouble(Transaction::getAmount)
-                                     .summaryStatistics();
+            st = transactions.stream()
+                             .mapToDouble(Transaction::getAmount)
+                             .summaryStatistics();
         } finally {
-            lock.unlockRead(readLock);
+            transactionsLock.unlockRead(readLock);
+        }
+
+        long writeLock = statisticsLock.writeLock();
+        try {
+            statistics.setStats(st);
+        } finally {
+            statisticsLock.unlockWrite(writeLock);
         }
     }
 
     private void removeOld() {
-        long writeLock = lock.writeLock();
+        long writeLock = transactionsLock.writeLock();
         try {
             transactions.removeIf(t -> !t.happenedInLastSecond());
         } finally {
-            lock.unlockWrite(writeLock);
+            transactionsLock.unlockWrite(writeLock);
         }
     }
 }

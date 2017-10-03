@@ -1,4 +1,4 @@
-package com.arthurtaborda.transactionmonitor;
+package com.arthurtaborda.transactionmonitor.repository;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

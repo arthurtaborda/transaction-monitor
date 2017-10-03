@@ -1,11 +1,13 @@
 package com.arthurtaborda.transactionmonitor;
 
+import com.arthurtaborda.transactionmonitor.repository.InMemTransactionRepository;
+import com.arthurtaborda.transactionmonitor.repository.Transaction;
+import com.arthurtaborda.transactionmonitor.repository.TransactionStatistics;
 import io.vertx.core.Vertx;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.DoubleSummaryStatistics;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
@@ -44,7 +46,14 @@ public class InMemTransactionRepositoryTest {
     public void testConcurrency() throws Exception {
         Runnable add1000Transactions = () -> {
             IntStream.rangeClosed(1, 1000)
-                     .forEach(i -> addTransaction(i));
+                     .forEach(i -> {
+                         try {
+                             TimeUnit.NANOSECONDS.sleep(1);
+                             addTransaction(i);
+                         } catch (InterruptedException e) {
+                             e.printStackTrace();
+                         }
+                     });
         };
         allOf(runAsync(add1000Transactions),
               runAsync(add1000Transactions),
@@ -53,7 +62,7 @@ public class InMemTransactionRepositoryTest {
 
         waitToGenerateStatistics();
 
-        DoubleSummaryStatistics statistics = repository.getStatistics();
+        TransactionStatistics statistics = repository.getStatistics();
         assertThat(statistics.getCount()).isEqualTo(4000);
         assertThat(statistics.getSum()).isEqualTo(2002000);
         assertThat(statistics.getMax()).isEqualTo(1000);

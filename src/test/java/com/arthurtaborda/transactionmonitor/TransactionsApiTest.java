@@ -100,6 +100,17 @@ public class TransactionsApiTest {
     }
 
     @Test
+    public void whenRequestIsInvalidJson_return400() {
+        given().body("{\"amount\": 400, \"timestamp\": 150703a7665000}")
+               .contentType(ContentType.JSON)
+               .when()
+               .post("/transactions")
+               .then()
+               .statusCode(400)
+               .body(equalTo("Json is invalid"));
+    }
+
+    @Test
     public void whenTransactionIsSuccessful_return201() {
         given().body(new TransactionRequest(300, currentTimeMillis()).toJson())
                .contentType(ContentType.JSON)

@@ -57,7 +57,13 @@ public class RestApi extends AbstractVerticle {
               .consumes("application/json")
               .handler(ctx -> {
                   HttpServerResponse response = ctx.response();
-                  JsonObject request = ctx.getBodyAsJson();
+                  JsonObject request = null;
+                  try {
+                      request = ctx.getBodyAsJson();
+                  } catch (Exception e) {
+                      response.setStatusCode(400).end("Json is invalid");
+                      return;
+                  }
                   Double amount = null;
                   try {
                       amount = request.getDouble("amount");

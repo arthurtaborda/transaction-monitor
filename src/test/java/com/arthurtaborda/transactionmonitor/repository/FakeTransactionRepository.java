@@ -14,17 +14,17 @@ public class FakeTransactionRepository implements TransactionRepository {
 
     @Override
     public boolean addTransaction(Transaction transaction) {
-        boolean happenedInLastSecond = transaction.happenedInLastSecond();
-        if (happenedInLastSecond) {
+        boolean happenedInLastMinute = transaction.happenedInLastMinute();
+        if (happenedInLastMinute) {
             transactions.add(transaction);
         }
-        return happenedInLastSecond;
+        return happenedInLastMinute;
     }
 
     @Override
     public TransactionStatistics getStatistics() {
         DoubleSummaryStatistics st = transactions.stream()
-                                                 .filter(Transaction::happenedInLastSecond)
+                                                 .filter(Transaction::happenedInLastMinute)
                                                  .mapToDouble(Transaction::getAmount)
                                                  .summaryStatistics();
         return new TransactionStatistics(st);

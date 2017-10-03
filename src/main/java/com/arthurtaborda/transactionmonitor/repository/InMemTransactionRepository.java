@@ -4,7 +4,6 @@ import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 
 import java.util.Collection;
-import java.util.DoubleSummaryStatistics;
 import java.util.LinkedList;
 import java.util.concurrent.locks.StampedLock;
 
@@ -53,8 +52,8 @@ public class InMemTransactionRepository implements TransactionRepository {
 
     @Override
     public boolean addTransaction(Transaction transaction) {
-        boolean happenedInLastSecond = transaction.happenedInLastSecond();
-        if (happenedInLastSecond) {
+        boolean happenedInLastMinute = transaction.happenedInLastMinute();
+        if (happenedInLastMinute) {
             LOGGER.debug("Add transaction");
             long writeLock = transactionsLock.writeLock();
             try {
@@ -64,7 +63,7 @@ public class InMemTransactionRepository implements TransactionRepository {
             }
         }
 
-        return happenedInLastSecond;
+        return happenedInLastMinute;
     }
 
     @Override
@@ -96,7 +95,7 @@ public class InMemTransactionRepository implements TransactionRepository {
     private void removeOld() {
         long writeLock = transactionsLock.writeLock();
         try {
-            transactions.removeIf(t -> !t.happenedInLastSecond());
+            transactions.removeIf(t -> !t.happenedInLastMinute());
         } finally {
             transactionsLock.unlockWrite(writeLock);
         }

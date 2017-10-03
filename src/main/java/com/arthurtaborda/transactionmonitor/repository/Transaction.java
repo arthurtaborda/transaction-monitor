@@ -23,7 +23,7 @@ public class Transaction {
         return timestamp;
     }
 
-    public boolean happenedInLastSecond() {
+    public boolean happenedInLastMinute() {
         return currentTimeMillis() - timestamp < 60000;
     }
 }
